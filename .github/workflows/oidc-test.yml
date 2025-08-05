@@ -1,0 +1,30 @@
+name: Test OIDC with AWS
+
+on:
+  # Trigger on push to main branch
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # This must match the role name you created
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_ROLE_NAME }}
+          # Use the AWS account ID from secrets (we'll set this in GH)
+          aws-region: us-east-1  # Change to your preferred region
+
+      - name: Run a simple command (using AWS CLI)
+        run: |
+          # Print a message to logs
+          echo "Hello from AWS! This is a test using OIDC."
+          aws sts get-caller-identity > /dev/null && echo aws sts succeeded
+          aws logs put-log-events --log-group-name "/ldoktor/github-actions/oidc-test" --log-stream-name "oidc-aws-test" --log-events "[{\"timestamp\":`date +%s%3N`, \"message\":\".\"}]"
